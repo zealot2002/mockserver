@@ -9,4 +9,22 @@ CREATE TABLE IF NOT EXISTS merchant (
     address TEXT NOT NULL COMMENT '地址',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+);
+
+CREATE TABLE IF NOT EXISTS batch (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    merchant_id INT NOT NULL COMMENT '商家ID',
+    collar_count INT NOT NULL COMMENT '项圈数量',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    FOREIGN KEY (merchant_id) REFERENCES merchant(id)
+);
+
+CREATE TABLE IF NOT EXISTS collar (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    merchant_id INT NOT NULL COMMENT '商家ID',
+    batch_id INT NOT NULL COMMENT '批次ID',
+    collar_code VARCHAR(32) NOT NULL UNIQUE COMMENT '项圈编码',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    FOREIGN KEY (merchant_id) REFERENCES merchant(id),
+    FOREIGN KEY (batch_id) REFERENCES batch(id)
 ); 

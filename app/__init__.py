@@ -22,8 +22,9 @@ def create_app():
     db.init_app(app)
     api.init_app(app)
     
-    # 注册商家路由
-    from app.routes import merchant_bp
+    # 注册路由
+    from app.routes import merchant_bp, batch_bp
     app.register_blueprint(merchant_bp)
+    app.register_blueprint(batch_bp)
     
     return app 
