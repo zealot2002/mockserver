@@ -11,6 +11,7 @@ ns = api.namespace('batches', description='批次管理接口')
 batch_model = api.model('Batch', {
     'id': fields.Integer(readonly=True, description='批次ID'),
     'merchant_id': fields.Integer(required=True, description='商家ID'),
+    'merchant_name': fields.String(readonly=True, description='商家名称'),
     'collar_count': fields.Integer(required=True, description='项圈数量'),
     'created_at': fields.DateTime(readonly=True, description='创建时间')
 })
@@ -18,6 +19,7 @@ batch_model = api.model('Batch', {
 collar_model = api.model('Collar', {
     'id': fields.Integer(readonly=True, description='项圈ID'),
     'merchant_id': fields.Integer(readonly=True, description='商家ID'),
+    'merchant_name': fields.String(readonly=True, description='商家名称'),
     'batch_id': fields.Integer(readonly=True, description='批次ID'),
     'collar_code': fields.String(readonly=True, description='项圈编码'),
     'created_at': fields.DateTime(readonly=True, description='创建时间')
@@ -44,9 +46,7 @@ merchant_batch_request = api.model('MerchantBatchRequest', {
 
 # 批次项圈请求模型
 batch_collar_request = api.model('BatchCollarRequest', {
-    'batch_id': fields.Integer(required=True, description='批次ID'),
-    'page': fields.Integer(required=False, default=1, description='页码'),
-    'per_page': fields.Integer(required=False, default=10, description='每页数量')
+    'batch_id': fields.Integer(required=True, description='批次ID')
 })
 
 @ns.route('/create')
@@ -103,13 +103,11 @@ class BatchCollarList(Resource):
     @ns.doc('获取批次项圈')
     @ns.expect(batch_collar_request)
     def post(self):
-        """获取指定批次的项圈列表"""
+        """获取指定批次的所有项圈"""
         try:
             data = api.payload
             result = BatchService.get_batch_collars(
-                batch_id=data['batch_id'],
-                page=data.get('page', 1),
-                per_page=data.get('per_page', 10)
+                batch_id=data['batch_id']
             )
             return success(data=result)
         except Exception as e:

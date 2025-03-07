@@ -45,6 +45,11 @@ merchant_id_request = api.model('MerchantId', {
     'id': fields.Integer(required=True, description='商家ID')
 })
 
+# 添加搜索请求模型
+search_request = api.model('SearchRequest', {
+    'keyword': fields.String(required=True, description='搜索关键字（商家名称、联系人、电话）')
+})
+
 @ns.route('/list')
 class MerchantList(Resource):
     @ns.doc('获取所有商家')
@@ -122,5 +127,26 @@ class MerchantDelete(Resource):
                 return error("缺少商家ID")
             MerchantService.delete_merchant(merchant_id)
             return success(msg="删除成功")
+        except Exception as e:
+            return error(str(e))
+
+@ns.route('/search')
+class MerchantSearch(Resource):
+    @ns.doc('搜索商家')
+    @ns.expect(search_request)
+    @ns.response(200, 'Success', response_model)
+    def post(self):
+        """根据关键字搜索商家"""
+        try:
+            data = api.payload
+            keyword = data.get('keyword', '').strip()
+            if not keyword:
+                return error('搜索关键字不能为空')
+                
+            merchants = MerchantService.search_merchants(keyword)
+            return success(data={
+                'items': merchants,
+                'total': len(merchants)
+            })
         except Exception as e:
             return error(str(e)) 

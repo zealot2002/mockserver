@@ -50,4 +50,25 @@ class MerchantService:
     def delete_merchant(merchant_id):
         merchant = Merchant.query.get_or_404(merchant_id)
         db.session.delete(merchant)
-        db.session.commit() 
+        db.session.commit()
+    
+    @staticmethod
+    def search_merchants(keyword):
+        """
+        根据关键字模糊查询商家
+        :param keyword: 搜索关键字（商家名称、联系人、电话）
+        :return: 商家列表
+        """
+        if not keyword:
+            return []
+            
+        # 使用 or_ 组合多个条件
+        merchants = Merchant.query.filter(
+            db.or_(
+                Merchant.name.like(f'%{keyword}%'),
+                Merchant.contact_person.like(f'%{keyword}%'),
+                Merchant.phone.like(f'%{keyword}%')
+            )
+        ).order_by(Merchant.created_at.desc()).all()
+        
+        return [merchant.to_dict() for merchant in merchants] 
