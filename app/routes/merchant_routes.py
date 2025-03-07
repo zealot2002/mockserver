@@ -50,6 +50,11 @@ search_request = api.model('SearchRequest', {
     'keyword': fields.String(required=True, description='搜索关键字（商家名称、联系人、电话）')
 })
 
+# 添加项圈查询请求模型
+collar_query_request = api.model('CollarQueryRequest', {
+    'collar_code': fields.String(required=True, description='项圈序列号')
+})
+
 @ns.route('/list')
 class MerchantList(Resource):
     @ns.doc('获取所有商家')
@@ -148,5 +153,25 @@ class MerchantSearch(Resource):
                 'items': merchants,
                 'total': len(merchants)
             })
+        except Exception as e:
+            return error(str(e))
+
+@ns.route('/get-by-collar')
+class MerchantByCollar(Resource):
+    @ns.doc('根据项圈获取商家')
+    @ns.expect(collar_query_request)
+    @ns.response(200, 'Success', response_model)
+    def post(self):
+        """根据项圈序列号获取商家信息"""
+        try:
+            data = api.payload
+            collar_code = data.get('collar_code', '').strip()
+            if not collar_code:
+                return error('项圈序列号不能为空')
+                
+            merchant = MerchantService.get_merchant_by_collar_code(collar_code)
+            return success(data=merchant)
+        except ValueError as e:
+            return error(str(e))
         except Exception as e:
             return error(str(e)) 

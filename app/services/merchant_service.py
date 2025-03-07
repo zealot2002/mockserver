@@ -1,4 +1,5 @@
 from app.models.merchant import Merchant
+from app.models.collar import Collar
 from app import db
 
 class MerchantService:
@@ -71,4 +72,22 @@ class MerchantService:
             )
         ).order_by(Merchant.created_at.desc()).all()
         
-        return [merchant.to_dict() for merchant in merchants] 
+        return [merchant.to_dict() for merchant in merchants]
+    
+    @staticmethod
+    def get_merchant_by_collar_code(collar_code):
+        """
+        根据项圈序列号获取商家信息
+        :param collar_code: 项圈序列号
+        :return: 商家信息
+        """
+        # 通过项圈编码查找项圈，并关联查询商家信息
+        result = db.session.query(Merchant)\
+            .join(Collar, Collar.merchant_id == Merchant.id)\
+            .filter(Collar.collar_code == collar_code)\
+            .first()
+        
+        if not result:
+            raise ValueError('项圈不存在')
+            
+        return result.to_dict() 
