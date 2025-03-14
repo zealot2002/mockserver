@@ -54,16 +54,21 @@ def create_task_template():
     except Exception as e:
         return error(str(e))
 
-@task_bp.route('/admin/task-templates', methods=['GET'])
+@task_bp.route('/admin/task-templates/list', methods=['POST'])
 @swag_from({
     'tags': ['管理端-任务模板管理'],
     'summary': '获取任务模板列表',
     'parameters': [
         {
-            'name': 'is_recurring',
-            'in': 'query',
-            'type': 'boolean',
-            'description': '是否为周期任务模板'
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'is_recurring': {'type': 'boolean', 'description': '是否为周期任务模板'}
+                }
+            }
         }
     ],
     'responses': {
@@ -101,7 +106,8 @@ def create_task_template():
 def get_task_templates():
     """获取任务模板列表"""
     try:
-        is_recurring = request.args.get('is_recurring', type=lambda v: v.lower() == 'true' if v else None)
+        data = request.get_json()
+        is_recurring = data.get('is_recurring')
         templates = TaskService.get_task_templates(is_recurring)
         return success({
             'templates': [{
@@ -213,41 +219,25 @@ def create_task():
     except Exception as e:
         return error(str(e))
 
-@task_bp.route('/admin/tasks', methods=['GET'])
+@task_bp.route('/admin/tasks/list', methods=['POST'])
 @swag_from({
     'tags': ['管理端-任务管理'],
     'summary': '获取任务列表',
     'parameters': [
         {
-            'name': 'status',
-            'in': 'query',
-            'type': 'string',
-            'description': '任务状态：PENDING/IN_PROGRESS/COMPLETED'
-        },
-        {
-            'name': 'assignee_id',
-            'in': 'query',
-            'type': 'integer',
-            'description': '负责人ID'
-        },
-        {
-            'name': 'warehouse_id',
-            'in': 'query',
-            'type': 'integer',
-            'description': '仓库ID'
-        },
-
-        {
-            'name': 'start_date',
-            'in': 'query',
-            'type': 'string',
-            'description': '开始日期，格式：YYYY-MM-DD'
-        },
-        {
-            'name': 'end_date',
-            'in': 'query',
-            'type': 'string',
-            'description': '结束日期，格式：YYYY-MM-DD'
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'status': {'type': 'string', 'description': '任务状态：PENDING/IN_PROGRESS/COMPLETED'},
+                    'assignee_id': {'type': 'integer', 'description': '负责人ID'},
+                    'warehouse_id': {'type': 'integer', 'description': '仓库ID'},
+                    'start_date': {'type': 'string', 'description': '开始日期，格式：YYYY-MM-DD'},
+                    'end_date': {'type': 'string', 'description': '结束日期，格式：YYYY-MM-DD'}
+                }
+            }
         }
     ],
     'responses': {
@@ -309,13 +299,13 @@ def create_task():
 def get_task_list():
     """获取任务列表"""
     try:
+        data = request.get_json()
         filters = {
-            'status': request.args.get('status'),
-            'assignee_id': request.args.get('assignee_id'),
-            'warehouse_id': request.args.get('warehouse_id'),
-
-            'start_date': request.args.get('start_date'),
-            'end_date': request.args.get('end_date')
+            'status': data.get('status'),
+            'assignee_id': data.get('assignee_id'),
+            'warehouse_id': data.get('warehouse_id'),
+            'start_date': data.get('start_date'),
+            'end_date': data.get('end_date')
         }
         # 移除None值的过滤条件
         filters = {k: v for k, v in filters.items() if v is not None}
@@ -350,23 +340,23 @@ def get_task_list():
     except Exception as e:
         return error(str(e))
 
-@task_bp.route('/worker/tasks', methods=['GET'])
+@task_bp.route('/worker/tasks/list', methods=['POST'])
 @swag_from({
     'tags': ['工人端-任务管理'],
     'summary': '获取工人的任务列表',
     'parameters': [
         {
-            'name': 'worker_id',
-            'in': 'query',
-            'type': 'integer',
+            'name': 'body',
+            'in': 'body',
             'required': True,
-            'description': '工人ID'
-        },
-        {
-            'name': 'status',
-            'in': 'query',
-            'type': 'string',
-            'description': '任务状态：PENDING/IN_PROGRESS/COMPLETED'
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'worker_id': {'type': 'integer', 'description': '工人ID'},
+                    'status': {'type': 'string', 'description': '任务状态：PENDING/IN_PROGRESS/COMPLETED'}
+                },
+                'required': ['worker_id']
+            }
         }
     ],
     'responses': {
@@ -428,8 +418,9 @@ def get_task_list():
 def get_worker_tasks():
     """获取工人的任务列表"""
     try:
-        worker_id = request.args.get('worker_id')
-        status = request.args.get('status')
+        data = request.get_json()
+        worker_id = data.get('worker_id')
+        status = data.get('status')
         
         if not worker_id:
             return error('Worker ID is required')
@@ -460,17 +451,23 @@ def get_worker_tasks():
     except Exception as e:
         return error(str(e))
 
-@task_bp.route('/worker/tasks/<int:task_id>/complete', methods=['PUT'])
+@task_bp.route('/worker/tasks/start', methods=['POST'])
 @swag_from({
     'tags': ['工人端-任务管理'],
-    'summary': '完成任务',
+    'summary': '开始任务',
+    'description': '将任务状态从未开始更新为进行中',
     'parameters': [
         {
-            'name': 'task_id',
-            'in': 'path',
-            'type': 'integer',
+            'name': 'body',
+            'in': 'body',
             'required': True,
-            'description': '任务ID'
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'task_id': {'type': 'integer', 'description': '任务ID'}
+                },
+                'required': ['task_id']
+            }
         }
     ],
     'responses': {
@@ -493,15 +490,82 @@ def get_worker_tasks():
         }
     }
 })
+def start_task():
+    """开始任务"""
+    try:
+        data = request.get_json()
+        task_id = data.get('task_id')
+        if not task_id:
+            return error('Task ID is required')
+        task = TaskService.start_task(task_id)
+        return success({
+            'task_id': task.id,
+            'status': task.status.value
+        })
+    except Exception as e:
+        return error(str(e))
+
+@task_bp.route('/worker/tasks/complete', methods=['POST'])
+@swag_from({
+    'tags': ['工人端-任务管理'],
+    'summary': '完成任务',
+    'description': '将任务状态从进行中更新为已完成',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'task_id': {'type': 'integer', 'description': '任务ID'},
+                    'actual_duration': {'type': 'integer', 'description': '实际耗时（分钟）'}
+                },
+                'required': ['task_id', 'actual_duration']
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '更新成功',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'code': {'type': 'integer', 'example': 200},
+                    'message': {'type': 'string'},
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'task_id': {'type': 'integer'},
+                            'status': {'type': 'string'},
+                            'completed_time': {'type': 'string'},
+                            'actual_duration': {'type': 'integer'}
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
 def complete_task():
     """完成任务"""
     try:
-        task_id = request.view_args['task_id']
-        task = TaskService.update_task_status(task_id, 'COMPLETED')
+        data = request.get_json()
+        task_id = data.get('task_id')
+        actual_duration = data.get('actual_duration')
+        if not task_id:
+            return error('Task ID is required')
+        if actual_duration is None:
+            return error('Actual duration is required')
+        task = TaskService.complete_task(task_id, actual_duration)
         return success({
             'task_id': task.id,
-            'status': task.status
+            'status': task.status.value,
+            'completed_time': task.completed_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'actual_duration': task.actual_duration
         })
+    except Exception as e:
+        return error(str(e))
     except Exception as e:
         return error(str(e))
 

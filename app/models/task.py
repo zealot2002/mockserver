@@ -8,6 +8,11 @@ class RecurrenceType(str, Enum):
     WEEKLY = 'weekly'  # 每周任务
     MONTHLY = 'monthly'  # 每月任务
 
+class TaskStatus(str, Enum):
+    PENDING = 'PENDING'  # 未开始
+    IN_PROGRESS = 'IN_PROGRESS'  # 进行中
+    COMPLETED = 'COMPLETED'  # 已完成
+
 class Warehouse(db.Model):
     __tablename__ = 'warehouse'
     
@@ -47,7 +52,7 @@ class Task(db.Model):
     template_id = db.Column(db.Integer, db.ForeignKey('task_template.id'), nullable=False)
     warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.id'), nullable=False)
     assignee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
-    status = db.Column(db.String(20), default='PENDING')
+    status = db.Column(db.Enum(TaskStatus), nullable=False, default=TaskStatus.PENDING)
     scheduled_time = db.Column(db.DateTime, nullable=False)
     completed_time = db.Column(db.DateTime)
     actual_duration = db.Column(db.Integer)  # 实际任务时长（分钟）

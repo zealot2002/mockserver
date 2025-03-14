@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from app import db
-from app.models.task import Task, TaskTemplate, Warehouse, Cage, Employee, TaskCage, RecurrenceType
+from app.models.task import Task, TaskTemplate, Warehouse, Cage, Employee, TaskCage, RecurrenceType, TaskStatus
 
 class TaskService:
     @staticmethod
@@ -73,7 +73,7 @@ class TaskService:
             warehouse_id=data['warehouse_id'],
             assignee_id=data['assignee_id'],
             scheduled_time=datetime.strptime(data['scheduled_time'], '%Y-%m-%d %H:%M:%S'),
-            status='PENDING'
+            status=TaskStatus.PENDING
         )
         
         db.session.add(task)
@@ -133,19 +133,32 @@ class TaskService:
         return query.all()
 
     @staticmethod
-    def update_task_status(task_id, status):
-        """更新任务状态"""
+    def start_task(task_id):
+        """开始任务"""
         task = Task.query.get(task_id)
         if not task:
             raise ValueError('Task not found')
-            
-        task.status = status
-        if status == 'COMPLETED':
-            task.completed_time = datetime.utcnow()
-            if task.completed_time and task.scheduled_time:
-                # 计算实际任务时长（分钟）
-                duration = task.completed_time - task.scheduled_time
-                task.actual_duration = int(duration.total_seconds() / 60)
+
+        if task.status != TaskStatus.PENDING:
+            raise ValueError('Task can only be started when in PENDING status')
+
+        task.status = TaskStatus.IN_PROGRESS
+        db.session.commit()
+        return task
+
+    @staticmethod
+    def complete_task(task_id, actual_duration):
+        """完成任务"""
+        task = Task.query.get(task_id)
+        if not task:
+            raise ValueError('Task not found')
+
+        if task.status != TaskStatus.IN_PROGRESS:
+            raise ValueError('Task can only be completed when in IN_PROGRESS status')
+
+        task.status = TaskStatus.COMPLETED
+        task.completed_time = datetime.utcnow()
+        task.actual_duration = actual_duration
         
         db.session.commit()
         return task
