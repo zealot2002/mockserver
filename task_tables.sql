@@ -1,0 +1,65 @@
+USE mock;
+
+-- 仓库表
+CREATE TABLE IF NOT EXISTS warehouse (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT '仓库名称',
+    address TEXT COMMENT '仓库地址',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 笼舍表
+CREATE TABLE IF NOT EXISTS cage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    warehouse_id INT NOT NULL COMMENT '所属仓库ID',
+    code VARCHAR(50) NOT NULL COMMENT '笼舍编号',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '笼舍状态',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouse(id)
+);
+
+-- 任务类型表
+CREATE TABLE IF NOT EXISTS task_type (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL COMMENT '任务类型名称',
+    is_routine BOOLEAN NOT NULL COMMENT '是否例行任务',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 任务表
+CREATE TABLE IF NOT EXISTS task (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT '任务名称',
+    description TEXT COMMENT '任务描述',
+    warehouse_id INT NOT NULL COMMENT '仓库ID',
+    task_type_id INT NOT NULL COMMENT '任务类型ID',
+    assignee_id INT NOT NULL COMMENT '负责人ID',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '任务状态',
+    scheduled_time DATETIME NOT NULL COMMENT '计划执行时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouse(id),
+    FOREIGN KEY (task_type_id) REFERENCES task_type(id)
+);
+
+-- 任务-笼舍关联表
+CREATE TABLE IF NOT EXISTS task_cage (
+    task_id INT NOT NULL,
+    cage_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (task_id, cage_id),
+    FOREIGN KEY (task_id) REFERENCES task(id),
+    FOREIGN KEY (cage_id) REFERENCES cage(id)
+);
+
+-- 员工表
+CREATE TABLE IF NOT EXISTS employee (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL COMMENT '员工姓名',
+    phone VARCHAR(20) NOT NULL COMMENT '联系电话',
+    role VARCHAR(20) NOT NULL COMMENT '角色',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
